@@ -1,0 +1,50 @@
+#!/usr/bin/env node
+
+// core
+const { join, resolve } = require('path');
+
+// theirs
+const rollup = require('rollup');
+const commonjs = require('rollup-plugin-commonjs');
+const replacejs = require('rollup-plugin-replace');
+const nodeResolve = require('rollup-plugin-node-resolve');
+
+const pkgName = '@nyt/experimental';
+const entry = 'lib/index.js';
+const experimentalPath = require.resolve(`${pkgName}/${entry}`);
+const scriptsDir = resolve(__dirname, 'lib/');
+
+async function build(inputOptions, outputOptions) {
+  // create a bundle
+  const bundle = await rollup.rollup(inputOptions);
+  // write the bundle to disk
+  console.log(bundle.imports);
+  var x = await bundle.write(outputOptions);
+  console.log(scriptsDir);
+}
+
+// experimental bundle
+const exInputOptions = {
+  input: experimentalPath,
+  // depends on these being included by copy-externals
+  external: ['react', 'react-dom'],
+  plugins: [
+    replacejs({
+      'process.env.NODE_ENV': JSON.stringify( 'production' )
+    }),
+    commonjs(),
+    nodeResolve(),
+  ]
+}
+
+const exOutputOptions = {
+  name: 'Experimental',
+  format: 'umd',
+  file: join(scriptsDir, 'experimental.js'),
+  globals: {
+    'react': 'React',
+    'react-dom': 'ReactDOM'
+  },
+}
+
+build(exInputOptions, exOutputOptions);
